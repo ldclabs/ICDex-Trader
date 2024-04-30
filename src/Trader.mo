@@ -39,22 +39,22 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
 
     private let version_: Text = "0.5.4";
     private let timeoutSeconds: Nat = 300;
-    private stable var paused: Bool = false; 
+    private stable var paused: Bool = false;
     private stable var owner: Principal = Option.get(initOwner, installMsg.caller);
     private stable var operators: List.List<Principal> = List.nil();
     private stable var whitelistPairs: List.List<Principal> = ?(initPair, null);
     private stable var pairInfo: List.List<PairInfo> = List.nil();
 
-    /* 
+    /*
     * Local Functions
     */
-    private func _onlyOwner(_caller: Principal) : Bool { 
+    private func _onlyOwner(_caller: Principal) : Bool {
         return Principal.isController(_caller) or _caller == owner;
     };  // assert(_onlyOwner(msg.caller));
-    private func _onlyOperator(_caller: Principal) : Bool { 
+    private func _onlyOperator(_caller: Principal) : Bool {
         return List.some(operators, func (a: Principal): Bool{ a == _caller });
     };
-    private func _onlyWhitelistPair(_pair: Principal) : Bool { 
+    private func _onlyWhitelistPair(_pair: Principal) : Bool {
         return List.some(whitelistPairs, func (p: Principal): Bool{ p == _pair });
     };
 
@@ -80,11 +80,11 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
 
     private func _toSaBlob(_sa: ?[Nat8]) : ?Blob{
         switch(_sa){
-            case(?(sa)){ 
+            case(?(sa)){
                 if (sa.size() == 0){
                     return null;
                 }else{
-                    return ?Blob.fromArray(sa); 
+                    return ?Blob.fromArray(sa);
                 };
             };
             case(_){ return null; };
@@ -92,11 +92,11 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
     };
     private func _toSaNat8(_sa: ?Blob) : ?[Nat8]{
         switch(_sa){
-            case(?(sa)){ 
+            case(?(sa)){
                 if (sa.size() == 0){
                     return null;
                 }else{
-                    return ?Blob.toArray(sa); 
+                    return ?Blob.toArray(sa);
                 };
             };
             case(_){ return null; };
@@ -281,7 +281,7 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
                     info = pair.info;
                     token0Decimals = pair.token0Decimals;
                     token1Decimals = pair.token1Decimals;
-                    token0Fee = pair.token0Fee; 
+                    token0Fee = pair.token0Fee;
                     token1Fee = pair.token1Fee;
                     isToken0SupportApproval = pair.isToken0SupportApproval;
                     isToken1SupportApproval = pair.isToken1SupportApproval;
@@ -294,8 +294,8 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
     };
 
     private func _isInitialized(_pair: Principal) : Bool{
-        return List.some(pairInfo, func (pair: PairInfo): Bool{ 
-            pair.canisterId == _pair and Option.isSome(pair.isKeptInPair) 
+        return List.some(pairInfo, func (pair: PairInfo): Bool{
+            pair.canisterId == _pair and Option.isSome(pair.isKeptInPair)
         });
     };
     private func _init(_pair: Principal) : async (){
@@ -303,7 +303,7 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
         let info = await pair.info();
         assert(info.token0.2 == #drc20 or info.token0.2 == #icrc1 or info.token0.2 == #icp);
         assert(info.token1.2 == #drc20 or info.token1.2 == #icrc1 or info.token1.2 == #icp);
-        var token0Decimals : Nat8 = 8; 
+        var token0Decimals : Nat8 = 8;
         var token0Fee : Nat = 0;
         let isToken0SupportApproval = await* _tokenApprove(info.token0.0, info.token0.2, {owner = _pair; subaccount = null});
         if (info.token0.2 == #drc20){
@@ -317,7 +317,7 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
                 token0Fee := await token0.icrc1_fee();
             }catch(e){};
         };
-        var token1Decimals : Nat8 = 8; 
+        var token1Decimals : Nat8 = 8;
         var token1Fee : Nat = 0;
         let isToken1SupportApproval = await* _tokenApprove(info.token1.0, info.token1.2, {owner = _pair; subaccount = null});
         if (info.token1.2 == #drc20){
@@ -338,7 +338,7 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
             info = info;
             token0Decimals = token0Decimals;
             token1Decimals = token1Decimals;
-            token0Fee = ?token0Fee; 
+            token0Fee = ?token0Fee;
             token1Fee = ?token1Fee;
             isToken0SupportApproval = ?isToken0SupportApproval;
             isToken1SupportApproval = ?isToken1SupportApproval;
@@ -348,21 +348,21 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
     };
 
 
-    /* 
+    /*
     * Public Functions
     */
 
-    /// Query statistics of the pair.  
-    /// Tip: This is a composite_query method that does not get results if the trading pair and Trader are not in the same subnet.   
+    /// Query statistics of the pair.
+    /// Tip: This is a composite_query method that does not get results if the trading pair and Trader are not in the same subnet.
     /// Solution: query through the stats() method of the trading pair.
     public composite query func price(_pair: Principal): async {price:Float; change24h:Float; vol24h:ICDex.Vol; totalVol:ICDex.Vol}{
         let dex: ICDex.Self = actor(Principal.toText(_pair));
         return await dex.stats();
     };
 
-    /// Query orderbook of the pair.  
+    /// Query orderbook of the pair.
     /// Tip: It is more efficient to query directly using the query method of the ICDex trading pair.
-    /// Tip: This is a composite_query method that does not get results if the trading pair and Trader are not in the same subnet.   
+    /// Tip: This is a composite_query method that does not get results if the trading pair and Trader are not in the same subnet.
     /// Solution: query through the level100() method of the trading pair.
     public composite query func orderbook(_pair: Principal): async (unitSize: Nat, orderBook: {ask: [(price: Float, quantity: Nat)]; bid: [(price: Float, quantity: Nat)]}){
         let dex: ICDex.Self = actor(Principal.toText(_pair));
@@ -379,15 +379,15 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
         return (res.0, {
             ask = Array.map<ICDex.PriceResponse, (Float, Nat)>(res.1.ask, func (t: ICDex.PriceResponse): (Float, Nat){
                 (_natToFloat(t.price) / _natToFloat(res.0) * _natToFloat(10**Nat8.toNat(token0Decimals)) / _natToFloat(10**Nat8.toNat(token1Decimals)), t.quantity)
-            }); 
+            });
             bid = Array.map<ICDex.PriceResponse, (Float, Nat)>(res.1.bid, func (t: ICDex.PriceResponse): (Float, Nat){
                 (_natToFloat(t.price) / _natToFloat(res.0) * _natToFloat(10**Nat8.toNat(token0Decimals)) / _natToFloat(10**Nat8.toNat(token1Decimals)), t.quantity)
-            }); 
+            });
         });
     };
 
-    /// Query the status of an order.  
-    /// Tip: This is a composite_query method that does not get results if the trading pair and Trader are not in the same subnet.   
+    /// Query the status of an order.
+    /// Tip: This is a composite_query method that does not get results if the trading pair and Trader are not in the same subnet.
     /// Solution: query through the statusByTxid() method of the trading pair.
     public composite query func status(_pair: Principal, _txid: ?ICDex.Txid): async ICDex.OrderStatusResponse{
         let address = Tools.principalToAccountHex(Principal.fromActor(this), null);
@@ -395,7 +395,7 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
         let prepares = await dex.getTxAccount(address);
         let nonce = prepares.2;
         switch(_txid){
-            case(?(txid)){ 
+            case(?(txid)){
                 return await dex.statusByTxid(txid);
             };
             case(_){
@@ -407,8 +407,8 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
         return #None;
     };
 
-    /// Orders in pending status. Note, _page start from 1.  
-    /// Tip: This is a composite_query method that does not get results if the trading pair and Trader are not in the same subnet.   
+    /// Orders in pending status. Note, _page start from 1.
+    /// Tip: This is a composite_query method that does not get results if the trading pair and Trader are not in the same subnet.
     /// Solution: query through the pending() method of the trading pair.
     public composite query func pending(_pair: Principal, _page: ?Nat, _size: ?Nat): async ICDex.TrieList<ICDex.Txid, ICDex.TradingOrder>{
         let address = Tools.principalToAccountHex(Principal.fromActor(this), null);
@@ -416,8 +416,8 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
         return await dex.pending(?address, _page, _size);
     };
 
-    /// Latest 100 events.  
-    /// Tip: This is a composite_query method that does not get results if the trading pair and Trader are not in the same subnet.   
+    /// Latest 100 events.
+    /// Tip: This is a composite_query method that does not get results if the trading pair and Trader are not in the same subnet.
     /// Solution: query through the drc205_events() method of the trading pair.
     public composite query func events(_pair: Principal): async [DRC205.TxnRecord]{
         let address = Tools.principalToAccountHex(Principal.fromActor(this), null);
@@ -425,16 +425,16 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
         return await drc205.drc205_events(?address);
     };
 
-    /// Place an order  
+    /// Place an order
     /// Parameters:
     /// - pair       Canister-id of the pair.
     /// - side       Side of the order, its value is #Buy or #Sell.
     /// - price      Human-readable Price, e.g. SNS1/ICP = 45.00, expressed as how many `base_unit`s (e.g. ICPs) of token1 can be exchanged for 1 `base_unit`s (e.g. SNS1s) of token0.
     ///                 Price = _price * 10\**token1_decimals / 10\**token0_decimals * UNIT_SIZE
     /// - quantity   Quantity (smallest unit) of token0 to be traded for the order. It MUST be an integer multiple of UNIT_SIZE. Note: An additional 2x token fee must be retained in the balance.
-    /// 
-    /// Example:  
-    ///     Purchase 2 SNS1s at 45.00 via SNS1/ICP pair.  
+    ///
+    /// Example:
+    ///     Purchase 2 SNS1s at 45.00 via SNS1/ICP pair.
     ///     order(Principal.fromText("xxxxx-xxxxx-xxxxx-cai"), #Buy, 45.00, 200000000)
     public shared(msg) func order(_pair: Principal, _side: {#Buy;#Sell}, _price: Float, _quantity: Nat) : async ICDex.TradingResult{
         assert(_onlyOwner(msg.caller) or _onlyOperator(msg.caller));
@@ -448,7 +448,7 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
     };
 
     /// Create buy-wall
-    public shared(msg) func buyWall(_pair: Principal, _buywall: [{price: Float; quantity: Nat}]) : 
+    public shared(msg) func buyWall(_pair: Principal, _buywall: [{price: Float; quantity: Nat}]) :
     async [{price: Float; quantity: Nat; result: ?ICDex.TradingResult }]{
         assert(_onlyOwner(msg.caller) or _onlyOperator(msg.caller));
         assert(_onlyWhitelistPair(_pair));
@@ -467,7 +467,7 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
         return results;
     };
 
-    /// Add liquidity to OAMM 
+    /// Add liquidity to OAMM
     public shared(msg) func addLiquidity(_maker: Principal, _value0: Nat, _value1: Nat) : async Maker.Shares{
         assert(_onlyOwner(msg.caller) or _onlyOperator(msg.caller));
         assert(not(paused));
@@ -579,7 +579,7 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
     };
 
     /// Deposit funds from Trader to Pair
-    public shared(msg) func depositToPair(_pair: Principal, _value0: ?Nat, _value1: ?Nat) : async (){ 
+    public shared(msg) func depositToPair(_pair: Principal, _value0: ?Nat, _value1: ?Nat) : async (){
         assert(_onlyOwner(msg.caller) or _onlyOperator(msg.caller));
         if (not(_isInitialized(_pair))){
             await _init(_pair);
@@ -599,9 +599,9 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
     };
     private var depositToPair_runningTime: ?Timestamp = null;
 
-    /// Withdraw funds from Pair to Trader.  
+    /// Withdraw funds from Pair to Trader.
     /// Note: This only withdraws the available funds, if you want to withdraw all the funds, execute the `cancelAll()` method first.
-    public shared(msg) func withdrawFromPair(_pair: Principal) : async (){ 
+    public shared(msg) func withdrawFromPair(_pair: Principal) : async (){
         assert(_onlyOwner(msg.caller) or _onlyOperator(msg.caller));
         if (not(_isInitialized(_pair))){
             await _init(_pair);
@@ -621,10 +621,10 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
     };
     private var withdrawFromPair_runningTime: ?Timestamp = null;
 
-    /* 
+    /*
     * Management
     */
-    public query func version() : async Text{  
+    public query func version() : async Text{
         return version_;
     };
     /// Returns owner
@@ -637,15 +637,15 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
         owner := _owner;
     };
     /// Pause or enable this Canister.
-    public shared(msg) func pause(_pause: Bool) : async (){ 
+    public shared(msg) func pause(_pause: Bool) : async (){
         assert(_onlyOwner(msg.caller));
         paused := _pause;
     };
     /// Returns whether to pause or not.
-    public query func isPaused() : async Bool{ 
+    public query func isPaused() : async Bool{
         return paused;
     };
-    /// Re-acquire trading pair information.  
+    /// Re-acquire trading pair information.
     /// The initialization can be repeated.
     public shared(msg) func init() : async (){
         assert(_onlyOwner(msg.caller));
@@ -654,31 +654,31 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
         };
     };
     /// Add a whitelist trading pair (only these pairs are allowed to be traded)
-    public shared(msg) func setWhitelist(_pair: Principal) : async Bool{ 
+    public shared(msg) func setWhitelist(_pair: Principal) : async Bool{
         assert(_onlyOwner(msg.caller));
         whitelistPairs := List.filter(whitelistPairs, func (p: Principal): Bool{ p != _pair });
         whitelistPairs := List.push(_pair, whitelistPairs);
         return true;
     };
     /// Remove a whitelist trading pair
-    public shared(msg) func removeWhitelist(_pair: Principal) : async Bool{ 
+    public shared(msg) func removeWhitelist(_pair: Principal) : async Bool{
         assert(_onlyOwner(msg.caller));
         whitelistPairs := List.filter(whitelistPairs, func (p: Principal): Bool{ p != _pair });
         return true;
     };
     /// Return whitelist trading pairs
-    public query func getWhitelist() : async [Principal]{ 
+    public query func getWhitelist() : async [Principal]{
         return List.toArray(whitelistPairs);
     };
     /// Add an operator (he can only submit trade orders, not withdraw funds).
-    public shared(msg) func setOperator(_operator: Principal) : async Bool{ 
+    public shared(msg) func setOperator(_operator: Principal) : async Bool{
         assert(_onlyOwner(msg.caller));
         operators := List.filter(operators, func (p: Principal): Bool{ p != _operator });
         operators := List.push(_operator, operators);
         return true;
     };
     /// Remove an operator
-    public shared(msg) func removeOperator(_operator: Principal) : async Bool{ 
+    public shared(msg) func removeOperator(_operator: Principal) : async Bool{
         assert(_onlyOwner(msg.caller));
         operators := List.filter(operators, func (p: Principal): Bool{ p != _operator });
         return true;
@@ -688,12 +688,12 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
         return List.toArray(operators);
     };
 
-    /// Return trader's balances.  
+    /// Return trader's balances.
     /// Tip: It is more efficient to query directly using the query method of the ICDex trading pair and Tokens.
     public shared(msg) func getBalances() : async [{
-        pair: Principal; 
-        tokens: (Text, Text); 
-        traderBalances: (Nat, Nat); 
+        pair: Principal;
+        tokens: (Text, Text);
+        traderBalances: (Nat, Nat);
         keptInPairBalances: ICDex.KeepingBalance;
         OAMMPools: [{maker: Principal; shares: Nat; shareDecimals: Nat8; NAV: Maker.UnitNetValue }]
     }]{
@@ -701,9 +701,9 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
         let traderIcrc1Account = {owner = Principal.fromActor(this); subaccount = null };
         let traderAccountId = Tools.principalToAccountBlob(Principal.fromActor(this), null);
         var balances : [{
-            pair: Principal; 
-            tokens: (Text, Text); 
-            traderBalances: (Nat, Nat); 
+            pair: Principal;
+            tokens: (Text, Text);
+            traderBalances: (Nat, Nat);
             keptInPairBalances: ICDex.KeepingBalance;
             OAMMPools: [{maker: Principal; shares: Nat; shareDecimals: Nat8; NAV: Maker.UnitNetValue }]
         }] = [];
@@ -741,13 +741,16 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
 
     /// Withdraw
     /// Note: To withdraw the funds being traded, you need to first call `withdrawFromPair()`.
-    public shared(msg) func withdraw(_token: Principal, _to: ICRC1.Account, _value: Nat) : async (){ 
+    public shared(msg) func withdraw(_token: Principal, _to: ICRC1.Account, _value: Nat) : async (){
         assert(_onlyOwner(msg.caller));
         try{
             await* _tokenTransfer(_token, #icrc1, _to, _value);
         }catch(e){
             await* _tokenTransfer(_token, #drc20, _to, _value);
         };
+    };
+
+    public shared(msg) func validate_withdraw(_token: Principal, _to: ICRC1.Account, _value: Nat) : async (){
     };
 
     // DRC207: ICMonitor
@@ -757,7 +760,7 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
             monitorable_by_self = true;
             monitorable_by_blackhole = { allowed = false; canister_id = null; };
             cycles_receivable = true;
-            timer = { enable = false; interval_seconds = null; }; 
+            timer = { enable = false; interval_seconds = null; };
         };
     };
     /// Return canister_status (Need to add this CanisterId as its own controller)

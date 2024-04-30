@@ -133,7 +133,7 @@ module {
     compute_allocation : Nat;
   };
   public type PairInfo = {
-        canisterId: Principal; 
+        canisterId: Principal;
         info: {
             name: Text;
             version: Text;
@@ -143,10 +143,10 @@ module {
             setting: ICDex.DexSetting;
             token0: ICDex.TokenInfo;
             token1: ICDex.TokenInfo;
-        }; 
-        token0Decimals: Nat8; 
+        };
+        token0Decimals: Nat8;
         token1Decimals: Nat8;
-        token0Fee: ?Nat; 
+        token0Fee: ?Nat;
         token1Fee: ?Nat;
         isToken0SupportApproval: ?Bool;
         isToken1SupportApproval: ?Bool;
@@ -164,9 +164,9 @@ module {
     fallbackFromPair : shared (_pair: Principal) -> async (value0: Nat, value1: Nat);
     fallbackFromMaker : shared (_maker: Principal) -> async (value0: Nat, value1: Nat);
     getBalances : shared () -> async [{
-        pair: Principal; 
-        tokens: (Text, Text); 
-        traderBalances: (Nat, Nat); 
+        pair: Principal;
+        tokens: (Text, Text);
+        traderBalances: (Nat, Nat);
         keptInPairBalances: ICDex.KeepingBalance;
         OAMMPools: [{maker: Principal; shares: Nat; shareDecimals: Nat8; NAV: Maker.UnitNetValue }]
     }];
@@ -184,6 +184,7 @@ module {
     depositToPair : shared (_pair: Principal, _value0: ?Nat, _value1: ?Nat) -> async ();
     withdrawFromPair : shared (_pair: Principal) -> async ();
     withdraw : shared ( token: Principal, to: Account, value: Nat ) -> async ();
+    validate_withdraw : shared ( token: Principal, to: Account, value: Nat ) -> async ();
     version : shared query () -> async Text;
     getOwner : shared query () -> async Principal;
     changeOwner : shared (_owner: Principal) -> async ();
